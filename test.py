@@ -89,29 +89,35 @@ class AdaBoost:
         return y_pred
 
 
-df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data', header=None)
-names = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.names',
-                    sep=':', skiprows=range(0, 54), header=None)[7:11]
+df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.data', header=None)
+names = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.names',
+                    sep=':', skiprows=range(0, 33), header=None)
 
 col_names = list(names[0])
-col_names.append('Iris')
+col_names.append('Spam')
 df.columns = col_names
-
-# Convert classes in target variable to {-1, 0, 1}
-types = df.Iris.unique()
-print(types)
-for i, v in enumerate(df.Iris.copy()):
-    df.Iris[i] = np.where(types == v)[0][0] - 1
 print(df)
+# Convert classes in target variable to {-1, 1}
+df['Spam'] = df['Spam'] * 2 - 1
+# Train - test split
 
-# X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Iris').values, df.Iris.values,
-#                                                     train_size=(2 * len(df) // 3), random_state=42)
-#
-# # Fit model
-# ab = AdaBoost()
-# ab.fit(X_train, y_train)
-#
-# # Predict on test set
-# y_pred = ab.predict(X_test)
-# print(y_pred)
-# print("Accuracy:", np.sum(y_test == y_pred) / len(y_test))
+X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Spam').values, df['Spam'].values,
+                                                    train_size=3065, random_state=42)
+print(len(X_train), len(X_test))
+print(len(y_train), len(y_test))
+
+# Fit model
+ab = AdaBoost()
+ab.fit(X_train, y_train)
+
+# Predict on test set
+y_pred = ab.predict(X_test)
+print(y_pred)
+
+
+def accuracy(y_true, y_pred):
+    return np.sum(y_true == y_pred) / len(y_true)
+
+
+acc = accuracy(y_test, y_pred)
+print("Accuracy:", acc)
