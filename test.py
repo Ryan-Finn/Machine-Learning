@@ -24,7 +24,6 @@ class DecisionStump:
 
 
 class AdaBoost:
-
     def __init__(self, n_clf=5):
         self.n_clf = n_clf
         self.clfs = []
@@ -73,6 +72,7 @@ class AdaBoost:
 
             # calculate predictions and update weights
             predictions = clf.predict(X)
+            print(clf.alpha, y, predictions)
 
             w *= np.exp(-clf.alpha * y * predictions)
             # Normalize to one
@@ -96,9 +96,9 @@ names = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/s
 col_names = list(names[0])
 col_names.append('Spam')
 df.columns = col_names
-print(df)
 # Convert classes in target variable to {-1, 1}
 df['Spam'] = df['Spam'] * 2 - 1
+print(df)
 # Train - test split
 
 X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Spam').values, df['Spam'].values,

@@ -5,8 +5,8 @@ from sklearn.model_selection import train_test_split
 
 # Decision stump used as weak classifier
 class DecisionStump:
-    def __init__(self):
-        self.polarity = 1
+    def __init__(self, polarity):
+        self.polarity = polarity
         self.feature_idx = None
         self.threshold = None
         self.alpha = None
@@ -24,9 +24,9 @@ class DecisionStump:
 
 
 class AdaBoost:
-
-    def __init__(self, n_clf=5):
+    def __init__(self, n_clf=5, polarity=1):
         self.n_clf = n_clf
+        self.polarity = polarity
         self.clfs = []
 
     def fit(self, X, y):
@@ -38,7 +38,7 @@ class AdaBoost:
         self.clfs = []
         # Iterate through classifiers
         for _ in range(self.n_clf):
-            clf = DecisionStump()
+            clf = DecisionStump(polarity=self.polarity)
 
             min_error = float('inf')
             # greedy search to find best threshold and feature
@@ -47,10 +47,12 @@ class AdaBoost:
                 thresholds = np.unique(X_column)
 
                 for threshold in thresholds:
-                    # predict with polarity 1
-                    p = 1
+                    p = self.polarity
                     predictions = np.ones(n_samples)
-                    predictions[X_column < threshold] = -1
+                    if p == 1:
+                        predictions[X_column < threshold] = -1
+                    else:
+                        predictions[X_column > threshold] = -1
 
                     # Error = sum of weights of misclassified samples
                     misclassified = w[y != predictions]
@@ -69,12 +71,9 @@ class AdaBoost:
 
             # calculate alpha
             EPS = 1e-10
-            clf.alpha = 0.5 * np.log((1.0 - min_error + EPS) / (min_error + EPS))
+            clf.alpha = -0.5 * np.log((1.0 - min_error + EPS) / (min_error + EPS))
 
-            # calculate predictions and update weights
-            predictions = clf.predict(X)
-
-            w *= np.exp(-clf.alpha * y * predictions)
+            w *= np.exp(np.single(clf.alpha * y * clf.predict(X)))
             # Normalize to one
             w /= np.sum(w)
 
@@ -97,21 +96,20 @@ col_names = list(names[0])
 col_names.append('Iris')
 df.columns = col_names
 
-# Convert classes in target variable to {-1, 0, 1}
-types = df.Iris.unique()
-print(types)
-for i, v in enumerate(df.Iris.copy()):
-    df.Iris[i] = np.where(types == v)[0][0] - 1
+# Convert classes in target variable to {-1, 1}
+df.loc[df.Iris == 'Iris-setosa', 'Iris'] = -1
+df.loc[df.Iris == 'Iris-versicolor', 'Iris'] = 1
+df.loc[df.Iris == 'Iris-virginica', 'Iris'] = 1
 print(df)
 
-# X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Iris').values, df.Iris.values,
-#                                                     train_size=(2 * len(df) // 3), random_state=42)
-#
-# # Fit model
-# ab = AdaBoost()
-# ab.fit(X_train, y_train)
-#
-# # Predict on test set
-# y_pred = ab.predict(X_test)
-# print(y_pred)
-# print("Accuracy:", np.sum(y_test == y_pred) / len(y_test))
+X_train, X_test, y_train, y_test = train_test_split(df.drop(columns='Iris').values, df.Iris.values,
+                                                    train_size=(2 * len(df) // 3), random_state=2)
+
+# Fit model
+ab = AdaBoost(n_clf=5, polarity=0)
+ab.fit(X_train, y_train)
+
+# Predict on test set
+y_pred = ab.predict(X_test)
+print(y_test, y_pred)
+print("Accuracy:", np.sum(y_test == y_pred) / len(y_test))
