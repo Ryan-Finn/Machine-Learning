@@ -30,6 +30,7 @@ class AdaBoost:
 
     def fit(self, X, y):
         n_samples, n_features = X.shape
+        print(n_samples, n_features)
 
         # Initialize weights to 1/N
         w = np.full(n_samples, (1 / n_samples))
@@ -68,11 +69,12 @@ class AdaBoost:
 
             # calculate alpha
             EPS = 1e-10
+            print(min_error)
             clf.alpha = 0.5 * np.log((1.0 - min_error + EPS) / (min_error + EPS))
 
             # calculate predictions and update weights
             predictions = clf.predict(X)
-            print(clf.alpha, y, predictions)
+            print(clf.alpha)
 
             w *= np.exp(-clf.alpha * y * predictions)
             # Normalize to one
@@ -107,7 +109,7 @@ print(len(X_train), len(X_test))
 print(len(y_train), len(y_test))
 
 # Fit model
-ab = AdaBoost()
+ab = AdaBoost(15)
 ab.fit(X_train, y_train)
 
 # Predict on test set
